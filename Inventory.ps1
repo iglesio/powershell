@@ -34,7 +34,7 @@ for (($i=0); $i -lt $qtddisk; $i++){
     $diskfull += (@("$DeviceID $SizeGB") -join '' )+"GB " 
 }
 
-#Function to calculate the number of disks.
+#Function to get the number of disks.
 function GetDisks{
     $diskinfo = @()
     foreach ($disk in $disks){
@@ -47,7 +47,7 @@ function GetDisks{
     }
 }
 
-#Function to calculate the number of cpus.
+#Function to get the number of cpus.
 function GetCPU{
     $qtdcpu = $processor.count
     $cpu = $processor[0] 
