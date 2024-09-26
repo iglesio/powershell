@@ -2,7 +2,7 @@
 This PowerShell script gathers essential information about a computer for troubleshooting or inventory purposes. 
 
 ### Key Functions:
-1. **Collects System Data**: Gathers information about the computer's hostname, username, domain, OS, BIOS, hardware, memory, logical disks, installed software, and network configuration.
+1. **Collects System Data**: Gathers information about the computer's hostname, username, domain, OS, BIOS, hardware, memory, logical disks, installed software, local users, and network configuration.
 2. **Formats Disk Information**: Defines a function to calculate and format disk sizes and free space.
 3. **Generates HTML Report**: Compiles the collected data into an HTML file for easy viewing and saves it to the user's Downloads folder.
 
@@ -24,7 +24,7 @@ $date = Get-Date
 $manufacturer = $computer_system.Manufacturer
 $model = $computer_system.Model
 $bios = Get-CimInstance -ClassName Win32_BIOS
-$serialnumber = $bios.SerialNumber
+$serial_number = $bios.SerialNumber
 $bios_version = $bios.BIOSVersion -join " "
 $processor = Get-CimInstance -ClassName Win32_processor | Select-Object -expandproperty name
 $memory = Get-CimInstance -ClassName Win32_PhysicalMemory
@@ -35,27 +35,27 @@ $softwares32 = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\Cur
 $softwares32 += Get-ItemProperty HKCU:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | ?{ $_.DisplayName -ne $null } 
 $softwares = $softwares64 + $softwares32 | Sort-Object -Property DisplayName -Unique
 $network = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration | ?{ $_.IPAddress -ne $null} | Select-Object Description, IPAddress, IPSubnet, DNSServerSearchOrder, DefaultIPGateway, DHCPServer 
-$localusers = Get-LocalUser
+$local_users = Get-LocalUser
 
 #Function to get the number of disks and calculate free space.
-function GetDisks{
-    $diskinfo = @()
+function get_disks{
+    $disk_info = @()
     foreach ($disk in $disks){
-        $diskinfo += [PSCustomObject]@{
+        $disk_info += [PSCustomObject]@{
             Disk = $disk.DeviceID
             Size = "{0:N2} GB" -f [math]::round($disk.Size / 1GB, 2)
             FreeSpace = "{0:N2} GB" -f [math]::round($disk.FreeSpace / 1GB, 2)
             FreeSpacePercentage = "{0:N2} %" -f [math]::round($disk.FreeSpace / $disk.Size * 100, 2)
         }
     }
-    return $diskinfo
+    return $disk_info
 }
 
 #Call functions and associate the results to the variables.
-$total_disks = GetDisks
+$total_disks = get_disks
 
 #Save all the information to an HTML file.
-$htmlcontent = @"
+$html_content = @"
 
 <!DOCTYPE html>
 <html lang="en">
@@ -111,10 +111,10 @@ font-size: 15px;
         <br/><br/>
         <table class="table">
             <tr><th colspan=2>BIOS/Hardware</th></tr>
-            <tr><td><b>Manufacturer</b></td><td>$manufacturer</td></tr>
-            <tr><td><b>Model</b></td><td>$model</td></tr>
-            <tr><td><b>SerialNumber</b></td><td>$serialnumber</td></tr>
-            <tr><td><b>Bios Version</b></td><td>$bios_version</td></tr>
+            <tr><td width=20%><b>Manufacturer</b></td><td>$manufacturer</td></tr>
+            <tr><td width=20%><b>Model</b></td><td>$model</td></tr>
+            <tr><td width=20%><b>SerialNumber</b></td><td>$serial_number</td></tr>
+            <tr><td width=20%><b>Bios Version</b></td><td>$bios_version</td></tr>
         </table>
         <br/><br/>
         <table class="table">
@@ -163,7 +163,7 @@ font-size: 15px;
             <tr><th colspan=3>Local Users</th></tr>
             <tr><td><b>User</b></td><td><b>Enabled</b></td><td><b>Description</b></td></tr>
             $(
-                foreach ($user in $localusers){
+                foreach ($user in $local_users){
                     "<tr><td>$($user.Name)</td><td>$($user.Enabled)</td><td>$($user.Description)</td></tr>"
                 }
             )
@@ -186,8 +186,6 @@ font-size: 15px;
 </html>
 "@
 
-$htmlcontent | Out-File "C:\Users\$username\Downloads\$hostname.html"
-
-
+$html_content | Out-File "$PSScriptRoot\$hostname.html"
 
 
