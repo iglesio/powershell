@@ -70,6 +70,12 @@ font-family: Arial, Helvetica, sans-serif;
 font-size: 15px;
 }
 
+
+header h1{
+  text-align: center;
+  font-size: 34px;
+}
+
 .table {
   border-collapse: collapse;
   width: 100%;
@@ -96,6 +102,7 @@ font-size: 15px;
 </head>
 <body>
     <header>
+        <h1>Inventory $($date.Year)</h1>
     </header> 
 
     <main>
