@@ -71,7 +71,6 @@ font-size: 15px;
 color: #302c29;
 }
 
-
 header h1{
   text-align: center;
   font-size: 34px;
@@ -81,6 +80,7 @@ header h1{
   border-collapse: collapse;
   width: 100%;
 }
+
 .table td, .table th {
   border: 1px solid #ddd;
   padding: 8px;
