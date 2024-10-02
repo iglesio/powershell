@@ -2,9 +2,10 @@
 This PowerShell script gathers essential information about a computer for troubleshooting or inventory purposes. 
 
 ### Key Functions:
-1. **Collects System Data**: Gathers information about the computer's hostname, username, domain, OS, BIOS, hardware, memory, logical disks, installed software, local users, and network configuration.
+1. **Collects System Data**: Gathers information about the computer's hostname, username, domain, OS, BIOS, hardware, memory, logical disks, installed software, local users, network, and services.
 2. **Formats Disk Information**: Defines a function to calculate and format disk sizes and free space.
-3. **Generates HTML Report**: Compiles the collected data into an HTML file for easy viewing and saves it to the same folder the script is running from.
+3. **Get Local Group Membership**: Defines a function to get groups the local users are members.
+4. **Generates HTML Report**: Compiles the collected data into an HTML file for easy viewing and saves it to the same folder the script is running from.
 
 ### Use Case:
 Useful for IT professionals needing to perform system audits or inventory management.
@@ -36,6 +37,8 @@ $softwares32 += Get-ItemProperty HKCU:\Software\Wow6432Node\Microsoft\Windows\Cu
 $softwares = $softwares64 + $softwares32 | Sort-Object -Property DisplayName -Unique
 $network = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration | ?{ $_.IPAddress -ne $null} | Select-Object Description, IPAddress, IPSubnet, DNSServerSearchOrder, DefaultIPGateway, DHCPServer 
 $local_users = Get-LocalUser
+$local_groups = Get-LocalGroup
+$services = Get-CimInstance -ClassName Win32_Service | Select-Object Caption, StartMode, State, StartName | Sort-Object -Property Caption
 
 #Function to get the number of disks and calculate free space.
 function get_disks{
@@ -51,8 +54,20 @@ function get_disks{
     return $disk_info
 }
 
-#Call functions and associate the results to the variables.
-$total_disks = get_disks
+#Function to get members of local groups
+function get_groups{
+    Param (
+        [string]$user
+    )
+    $users_membership = @()
+    foreach ($group in $local_groups){
+        $get_member = Get-LocalGroupMember -Group $group | Where-Object { $_.Name -like "*$($user)" }
+        if ($get_member){
+            $users_membership += $group.Name
+        } 
+    }
+    return $users_membership -join ', '
+}
 
 #Save all the information to an HTML file.
 $html_content = @"
@@ -79,6 +94,7 @@ header h1{
 .table {
   border-collapse: collapse;
   width: 100%;
+  margin-top: 40px;
 }
 
 .table td, .table th {
@@ -116,7 +132,7 @@ header h1{
             <tr><td width=20%><b>Timezone</b></td><td>$timezone</td></tr>
             <tr><td width=20%><b>Date</b></td><td>$date</td></tr>
         </table>
-        <br/><br/>
+        
         <table class="table">
             <tr><th colspan=2>BIOS/Hardware</th></tr>
             <tr><td width=20%><b>Manufacturer</b></td><td>$manufacturer</td></tr>
@@ -124,7 +140,7 @@ header h1{
             <tr><td width=20%><b>SerialNumber</b></td><td>$serial_number</td></tr>
             <tr><td width=20%><b>Bios Version</b></td><td>$bios_version</td></tr>
         </table>
-        <br/><br/>
+        
         <table class="table">
             <tr><th colspan=2>Processor</th></tr>
             $(
@@ -135,7 +151,7 @@ header h1{
                 }
             )
         </table>
-        <br/><br/>
+        
         <table class="table">
             <tr><th colspan=2>Memory</th></tr>
             <tr><td><b>Slot</b></td><td><b>Capacity</b></td></tr>
@@ -146,37 +162,37 @@ header h1{
             )
             <tr><td><b>Total</b></td><td>$(($memory.Capacity | Measure-Object -Sum).Sum / 1GB) GB</td></tr>
         </table>
-        <br/><br/>
+        
         <table class="table">
             <tr><th colspan=4>Disks</th></tr>
             <tr><td><b>Disk</b></td><td><b>Size</b></td><td><b>FreeSpace</b></td><td><b>FreeSpacePercentage</b></td></tr>
             $(
-                foreach ($disk in $total_disks){
+                foreach ($disk in get_disks){
                     "<tr><td>$($disk.Disk)</td><td>$($disk.Size)</td><td>$($disk.FreeSpace)</td><td>$($disk.FreeSpacePercentage)</td></tr>"
                 }
             )
         </table>
-        <br/><br/>
+        
         <table class="table">
             <tr><th colspan=6>Network Interfaces</th></tr>
             <tr><td><b>Interface</b></td><td><b>IP Address</b></td><td><b>Subnet Mask</b></td><td><b>DNS Server</b></td><td><b>Default Gateway</b></td><td><b>DHCP Server</b></td></tr>
             $(
                 foreach ($net in $network){
-                    "<tr><td>$($net.Description)</td><td>$($net.IPAddress)</td><td>$($net.IPSubnet)</td><td>$($net.DNSServerSearchOrder)</td><td>$($net.DefaultIPGateway)</td><td>$($net.DHCPServer)</td></tr>"
+                    "<tr><td>$($net.Description)</td><td>$($net.IPAddress -join ', ')</td><td>$($net.IPSubnet -join ', ')</td><td>$($net.DNSServerSearchOrder -join ', ')</td><td>$($net.DefaultIPGateway)</td><td>$($net.DHCPServer)</td></tr>"
                 }
             )
         </table>
-        <br/><br/>
+        
         <table class="table">
-            <tr><th colspan=3>Local Users</th></tr>
-            <tr><td><b>User</b></td><td><b>Enabled</b></td><td><b>Description</b></td></tr>
+            <tr><th colspan=4>Local Users</th></tr>
+            <tr><td><b>User</b></td><td><b>Enabled</b></td><td><b>Description</b></td><td><b>Groups</b></td></tr>
             $(
                 foreach ($user in $local_users){
-                    "<tr><td>$($user.Name)</td><td>$($user.Enabled)</td><td>$($user.Description)</td></tr>"
+                    "<tr><td>$($user.Name)</td><td>$($user.Enabled)</td><td>$($user.Description)</td><td>$(get_groups -user $user.Name)</td></tr>"
                 }
             )
         </table>
-        <br/><br/>
+        
         <table class="table">
             <tr><th colspan=2>Installed Softwares</th></tr>
             <tr><td><b>Name</b></td><td><b>Version</b></td></tr>
@@ -185,7 +201,17 @@ header h1{
                     "<tr><td width=40%>$($soft.DisplayName)</td><td>$($soft.DisplayVersion)</td></tr>"
                 }
             )
-        </table>        
+        </table>
+        
+        <table class="table">
+            <tr><th colspan=4>Services</th></tr>
+            <tr><td><b>Service Name</b></td><td><b>Status</b></td><td><b>Startup</b></td><td><b>Startup User</b></td></tr>
+            $(
+                foreach ($service in $services){
+                    "<tr><td width=40%>$($service.Caption)</td><td>$($service.State)</td><td>$($service.StartMode)</td><td>$($service.StartName)</td></tr>"
+                }
+            )
+        </table>         
     </main>
 
     <footer id="footer">
