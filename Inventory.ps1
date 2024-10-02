@@ -4,7 +4,7 @@ This PowerShell script gathers essential information about a computer for troubl
 ### Key Functions:
 1. **Collects System Data**: Gathers information about the computer's hostname, username, domain, OS, BIOS, hardware, memory, logical disks, installed software, local users, and network configuration.
 2. **Formats Disk Information**: Defines a function to calculate and format disk sizes and free space.
-3. **Generates HTML Report**: Compiles the collected data into an HTML file for easy viewing and saves it to the user's Downloads folder.
+3. **Generates HTML Report**: Compiles the collected data into an HTML file for easy viewing and saves it to the same folder the script is running from.
 
 ### Use Case:
 Useful for IT professionals needing to perform system audits or inventory management.
@@ -68,6 +68,7 @@ $html_content = @"
 *{
 font-family: Arial, Helvetica, sans-serif;
 font-size: 15px;
+color: #302c29;
 }
 
 
@@ -94,8 +95,8 @@ header h1{
   padding-bottom: 12px;
   text-align: center;
   font-size: 18px;
-  background-color: #96a1ad;
-  color: white;
+  background-color: #c6cfcf;
+  color: #302c29;
 }
 
 </style>
