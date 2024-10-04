@@ -1,5 +1,5 @@
 ﻿
-<#This script gets the Veeam Backup Jobs Schedule
+<#This script gets the Veeam backup jobs schedule.
 
 Author: Iglesio Santos
 Version: 1.0
@@ -61,7 +61,6 @@ foreach ($job in $jobs){
             Time = "Run Continuous"
         }
     }
-     
 }
 
 #Prints the output on the screen
