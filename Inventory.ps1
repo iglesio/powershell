@@ -15,62 +15,62 @@ Version: 1.0
 #>
 
 #Global variables and CIM querys to collect information about the computer.
-$hostname = $Env:COMPUTERNAME
-$username = $Env:USERNAME 
-$domain = $Env:USERDNSDOMAIN
-$computer_system = Get-CimInstance -ClassName Win32_ComputerSystem
-$os = Get-CimInstance -ClassName Win32_OperatingSystem | Select-Object -expandproperty caption
-$timezone = Get-CimInstance -ClassName Win32_TimeZone | Select-Object -expandproperty Caption
-$date = Get-Date
-$manufacturer = $computer_system.Manufacturer
-$model = $computer_system.Model
-$bios = Get-CimInstance -ClassName Win32_BIOS
-$serial_number = $bios.SerialNumber
-$bios_version = $bios.BIOSVersion -join " "
-$processor = Get-CimInstance -ClassName Win32_processor | Select-Object -expandproperty name
-$memory = Get-CimInstance -ClassName Win32_PhysicalMemory
-$disks = Get-CimInstance -ClassName Win32_logicaldisk -filter "DriveType='3'" 
-$softwares64 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | ?{ $_.DisplayName -ne $null }
-$softwares64 += Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | ?{ $_.DisplayName -ne $null }
-$softwares32 = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | ?{ $_.DisplayName -ne $null } 
-$softwares32 += Get-ItemProperty HKCU:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | ?{ $_.DisplayName -ne $null } 
-$softwares = $softwares64 + $softwares32 | Sort-Object -Property DisplayName -Unique
-$network = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration | ?{ $_.IPAddress -ne $null} | Select-Object Description, IPAddress, IPSubnet, DNSServerSearchOrder, DefaultIPGateway, DHCPServer 
-$local_users = Get-LocalUser
-$local_groups = Get-LocalGroup
-$services = Get-CimInstance -ClassName Win32_Service | Select-Object Caption, StartMode, State, StartName | Sort-Object -Property Caption
+$Hostname = $Env:COMPUTERNAME
+$Username = $Env:USERNAME 
+$Domain = $Env:USERDNSDOMAIN
+$ComputerSystem = Get-CimInstance -ClassName Win32_ComputerSystem
+$Os = Get-CimInstance -ClassName Win32_OperatingSystem | Select-Object -expandproperty caption
+$Timezone = Get-CimInstance -ClassName Win32_TimeZone | Select-Object -expandproperty Caption
+$Date = Get-Date
+$Manufacturer = $ComputerSystem.Manufacturer
+$Model = $ComputerSystem.Model
+$Bios = Get-CimInstance -ClassName Win32_BIOS
+$SerialNumber = $Bios.SerialNumber
+$BiosVersion = $Bios.BIOSVersion -join " "
+$Processor = Get-CimInstance -ClassName Win32_processor | Select-Object -expandproperty name
+$Memory = Get-CimInstance -ClassName Win32_PhysicalMemory
+$Disks = Get-CimInstance -ClassName Win32_logicaldisk -filter "DriveType='3'" 
+$Softwares64 = Get-ItemProperty HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | ?{ $_.DisplayName -ne $null }
+$Softwares64 += Get-ItemProperty HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\* | ?{ $_.DisplayName -ne $null }
+$Softwares32 = Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | ?{ $_.DisplayName -ne $null } 
+$Softwares32 += Get-ItemProperty HKCU:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | ?{ $_.DisplayName -ne $null } 
+$Softwares = $Softwares64 + $Softwares32 | Sort-Object -Property DisplayName -Unique
+$Network = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration | ?{ $_.IPAddress -ne $null} | Select-Object Description, IPAddress, IPSubnet, DNSServerSearchOrder, DefaultIPGateway, DHCPServer 
+$LocalUsers = Get-LocalUser
+$LocalGroups = Get-LocalGroup
+$Services = Get-CimInstance -ClassName Win32_Service | Select-Object Caption, StartMode, State, StartName | Sort-Object -Property Caption
 
 #Function to get the number of disks and calculate free space.
-function get_disks{
-    $disk_info = @()
-    foreach ($disk in $disks){
-        $disk_info += [PSCustomObject]@{
-            Disk = $disk.DeviceID
-            Size = "{0:N2} GB" -f [math]::round($disk.Size / 1GB, 2)
-            FreeSpace = "{0:N2} GB" -f [math]::round($disk.FreeSpace / 1GB, 2)
-            FreeSpacePercentage = "{0:N2} %" -f [math]::round($disk.FreeSpace / $disk.Size * 100, 2)
+function GetDisks{
+    $DiskInfo = @()
+    foreach ($Disk in $Disks){
+        $DiskInfo += [PSCustomObject]@{
+            Disk = $Disk.DeviceID
+            Size = "{0:N2} GB" -f [math]::round($Disk.Size / 1GB, 2)
+            FreeSpace = "{0:N2} GB" -f [math]::round($Disk.FreeSpace / 1GB, 2)
+            FreeSpacePercentage = "{0:N2} %" -f [math]::round($Disk.FreeSpace / $Disk.Size * 100, 2)
         }
     }
-    return $disk_info
+    return $DiskInfo
 }
 
 #Function to get members of local groups
-function get_groups{
+function GetGroups{
     Param (
-        [string]$user
+        [string]$User
     )
-    $users_membership = @()
-    foreach ($group in $local_groups){
-        $get_member = Get-LocalGroupMember -Group $group | Where-Object { $_.Name -like "*$($user)" }
-        if ($get_member){
-            $users_membership += $group.Name
+    $UsersMembership = @()
+    foreach ($Group in $LocalGroups){
+        $GetMember = Get-LocalGroupMember -Group $Group | Where-Object { $_.Name -like "*$($User)" }
+        if ($GetMember){
+            $UsersMembership += $Group.Name
         } 
     }
-    return $users_membership -join ', '
+    return $UsersMembership -join ', '
 }
 
 #Save all the information to an HTML file.
-$html_content = @"
+$HtmlContent = @"
 
 <!DOCTYPE html>
 <html lang="en">
@@ -119,34 +119,34 @@ header h1{
 </head>
 <body>
     <header>
-        <h1>Inventory $($date.Year)</h1>
+        <h1>Inventory $($Date.Year)</h1>
     </header> 
 
     <main>
         <table class="table">
             <tr><th colspan=2>Operating System</th></tr>
-            <tr><td width=20%><b>Hostname</b></td><td>$hostname</td></tr>
-            <tr><td width=20%><b>Username</b></td><td>$username</td></tr>
-            <tr><td width=20%><b>Domain</b></td><td>$domain</td></tr>
-            <tr><td width=20%><b>OS</b></td><td>$os</td></tr>
-            <tr><td width=20%><b>Timezone</b></td><td>$timezone</td></tr>
-            <tr><td width=20%><b>Date</b></td><td>$date</td></tr>
+            <tr><td width=20%><b>Hostname</b></td><td>$Hostname</td></tr>
+            <tr><td width=20%><b>Username</b></td><td>$Username</td></tr>
+            <tr><td width=20%><b>Domain</b></td><td>$Domain</td></tr>
+            <tr><td width=20%><b>OS</b></td><td>$Os</td></tr>
+            <tr><td width=20%><b>Timezone</b></td><td>$Timezone</td></tr>
+            <tr><td width=20%><b>Date</b></td><td>$Date</td></tr>
         </table>
         
         <table class="table">
             <tr><th colspan=2>BIOS/Hardware</th></tr>
-            <tr><td width=20%><b>Manufacturer</b></td><td>$manufacturer</td></tr>
-            <tr><td width=20%><b>Model</b></td><td>$model</td></tr>
-            <tr><td width=20%><b>SerialNumber</b></td><td>$serial_number</td></tr>
-            <tr><td width=20%><b>Bios Version</b></td><td>$bios_version</td></tr>
+            <tr><td width=20%><b>Manufacturer</b></td><td>$Manufacturer</td></tr>
+            <tr><td width=20%><b>Model</b></td><td>$Model</td></tr>
+            <tr><td width=20%><b>SerialNumber</b></td><td>$SerialNumber</td></tr>
+            <tr><td width=20%><b>Bios Version</b></td><td>$BiosVersion</td></tr>
         </table>
         
         <table class="table">
             <tr><th colspan=2>Processor</th></tr>
             $(
                 $i = 1
-                foreach ($cpu in $processor){
-                    "<tr><td width=20%>Processor $($i)</td><td>$cpu</td></tr>"
+                foreach ($Cpu in $Processor){
+                    "<tr><td width=20%>Processor $($i)</td><td>$Cpu</td></tr>"
                     $i++
                 }
             )
@@ -156,19 +156,19 @@ header h1{
             <tr><th colspan=2>Memory</th></tr>
             <tr><td><b>Slot</b></td><td><b>Capacity</b></td></tr>
             $(
-                foreach ($mem in $memory){
-                    "<tr><td width=20%>$($mem.Tag)</td><td>$($mem.Capacity / 1GB) GB</td></tr>"
+                foreach ($Mem in $Memory){
+                    "<tr><td width=20%>$($Mem.Tag)</td><td>$($Mem.Capacity / 1GB) GB</td></tr>"
                 }
             )
-            <tr><td><b>Total</b></td><td>$(($memory.Capacity | Measure-Object -Sum).Sum / 1GB) GB</td></tr>
+            <tr><td><b>Total</b></td><td>$(($Memory.Capacity | Measure-Object -Sum).Sum / 1GB) GB</td></tr>
         </table>
         
         <table class="table">
             <tr><th colspan=4>Disks</th></tr>
             <tr><td><b>Disk</b></td><td><b>Size</b></td><td><b>FreeSpace</b></td><td><b>FreeSpacePercentage</b></td></tr>
             $(
-                foreach ($disk in get_disks){
-                    "<tr><td>$($disk.Disk)</td><td>$($disk.Size)</td><td>$($disk.FreeSpace)</td><td>$($disk.FreeSpacePercentage)</td></tr>"
+                foreach ($Disk in GetDisks){
+                    "<tr><td>$($Disk.Disk)</td><td>$($Disk.Size)</td><td>$($Disk.FreeSpace)</td><td>$($Disk.FreeSpacePercentage)</td></tr>"
                 }
             )
         </table>
@@ -177,8 +177,8 @@ header h1{
             <tr><th colspan=6>Network Interfaces</th></tr>
             <tr><td><b>Interface</b></td><td><b>IP Address</b></td><td><b>Subnet Mask</b></td><td><b>DNS Server</b></td><td><b>Default Gateway</b></td><td><b>DHCP Server</b></td></tr>
             $(
-                foreach ($net in $network){
-                    "<tr><td>$($net.Description)</td><td>$($net.IPAddress -join ', ')</td><td>$($net.IPSubnet -join ', ')</td><td>$($net.DNSServerSearchOrder -join ', ')</td><td>$($net.DefaultIPGateway)</td><td>$($net.DHCPServer)</td></tr>"
+                foreach ($Net in $Network){
+                    "<tr><td>$($Net.Description)</td><td>$($Net.IPAddress -join ', ')</td><td>$($Net.IPSubnet -join ', ')</td><td>$($Net.DNSServerSearchOrder -join ', ')</td><td>$($Net.DefaultIPGateway)</td><td>$($Net.DHCPServer)</td></tr>"
                 }
             )
         </table>
@@ -187,8 +187,8 @@ header h1{
             <tr><th colspan=4>Local Users</th></tr>
             <tr><td><b>User</b></td><td><b>Enabled</b></td><td><b>Description</b></td><td><b>Groups</b></td></tr>
             $(
-                foreach ($user in $local_users){
-                    "<tr><td>$($user.Name)</td><td>$($user.Enabled)</td><td>$($user.Description)</td><td>$(get_groups -user $user.Name)</td></tr>"
+                foreach ($User in $LocalUsers){
+                    "<tr><td>$($User.Name)</td><td>$($User.Enabled)</td><td>$($User.Description)</td><td>$(GetGroups -user $User.Name)</td></tr>"
                 }
             )
         </table>
@@ -197,8 +197,8 @@ header h1{
             <tr><th colspan=2>Installed Softwares</th></tr>
             <tr><td><b>Name</b></td><td><b>Version</b></td></tr>
             $(
-                foreach ($soft in $softwares){
-                    "<tr><td width=40%>$($soft.DisplayName)</td><td>$($soft.DisplayVersion)</td></tr>"
+                foreach ($Soft in $Softwares){
+                    "<tr><td width=40%>$($Soft.DisplayName)</td><td>$($Soft.DisplayVersion)</td></tr>"
                 }
             )
         </table>
@@ -207,8 +207,8 @@ header h1{
             <tr><th colspan=4>Services</th></tr>
             <tr><td><b>Service Name</b></td><td><b>Status</b></td><td><b>Startup</b></td><td><b>Startup User</b></td></tr>
             $(
-                foreach ($service in $services){
-                    "<tr><td width=40%>$($service.Caption)</td><td>$($service.State)</td><td>$($service.StartMode)</td><td>$($service.StartName)</td></tr>"
+                foreach ($Service in $Services){
+                    "<tr><td width=40%>$($Service.Caption)</td><td>$($Service.State)</td><td>$($Service.StartMode)</td><td>$($Service.StartName)</td></tr>"
                 }
             )
         </table>         
@@ -220,6 +220,6 @@ header h1{
 </html>
 "@
 
-$html_content | Out-File "$PSScriptRoot\$hostname.html"
+$HtmlContent | Out-File "$PSScriptRoot\$hostname.html"
 
 
