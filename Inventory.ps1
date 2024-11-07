@@ -1,5 +1,6 @@
 <#
 This PowerShell script gathers essential information about a computer for troubleshooting or inventory purposes. 
+
 Author: Iglesio Santos
 Version: 1.0
 #>
