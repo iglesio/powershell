@@ -1,5 +1,6 @@
 ﻿
-<#This script gets the Veeam backup jobs schedule.
+<#
+This script gets the Veeam backup jobs schedule.
 
 Author: Iglesio Santos
 Version: 1.0
