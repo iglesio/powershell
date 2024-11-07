@@ -31,8 +31,8 @@ foreach ($VM in $VMs){
     #Enable dynamic memory
     Set-VMMemory -VMName $VM -DynamicMemoryEnabled $true -MinimumBytes 1GB -MaximumBytes 4GB
 
-    #Disable checkpoints and set number of processors
-    Set-VM -Name $VM -CheckpointType Disabled -ProcessorCount 1
+    #Disable automatic checkpoints and set number of processors
+    Set-VM -Name $VM -AutomaticCheckpointsEnabled $false -ProcessorCount 1 
 
     #Enable guest services
     Enable-VMIntegrationService -Name "Interface de Serviço de Convidado" -VMName $VM
