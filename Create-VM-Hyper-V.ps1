@@ -1,5 +1,5 @@
 <#
-This script creates a new VM on Hyper-V
+This script creates a new VM on Hyper-V.
 
 Author: Iglesio Santos
 Version: 1.0
