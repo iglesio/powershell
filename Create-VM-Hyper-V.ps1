@@ -1,4 +1,11 @@
-﻿$VMs= "srv1", "srv2"
+<#
+This script creates a new VM on Hyper-V
+
+Author: Iglesio Santos
+Version: 1.0
+#>
+
+$VMs= "srv1", "srv2"
 
 foreach ($VM in $VMs){
     #Creates a new VM
